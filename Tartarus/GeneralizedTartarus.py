@@ -1,7 +1,11 @@
+""" Generalized Tartarus Domain """
 
-import Domain
+import sys
+sys.path.append('..')
 import random
 from copy import deepcopy
+
+from Domain import Domain
 
 
 # cell states
@@ -24,16 +28,19 @@ class GeneralizedTartarus(Domain):
 
     """ Required domain methods """
 
-    def __init__(self,size,num_bricks=None,num_score_loc=None,
-                    num_steps=None,num_init_configs=100):
-        self.size = size
-        if num_bricks: self.num_bricks = num_bricks
-        else: self.num_bricks = size
-        if num_score_loc: self.num_score_loc = num_score_loc
-        else: self.num_score_loc = (size*2)/3
-        if num_steps: self.num_steps = num_steps
+    def __init__(self,args):
+        # Load args
+        if 'size' in args: self.size = args['size']
+        else: self.size = 6
+        if 'num_bricks' in args: self.num_bricks = args['num_bricks']
+        else: self.num_bricks = self.size
+        if 'num_score_loc' in args: self.num_score_loc = args['num_score_loc']
+        else: self.num_score_loc = (self.size*2)/3
+        if 'num_steps' in args: self.num_steps = args['num_steps']
         else: self.num_steps = 20*self.num_score_loc
-        self.num_init_configs = num_init_configs
+        if 'num_init_configs' in args: 
+            self.num_init_configs = args[num_init_configs]
+        else: self.num_init_configs = 100
 
         # init score locations
         self.score_locations = set()
@@ -82,7 +89,7 @@ class GeneralizedTartarus(Domain):
     def get_hand_coded_behavior(self):
         return self.hand_coded
 
-    def hand_coded_distance(b1,b2):
+    def hand_coded_distance(self,b1,b2):
         d = 0
         for c in range(self.num_init_configs):
             d += manhatten(b1[c],b2[c])

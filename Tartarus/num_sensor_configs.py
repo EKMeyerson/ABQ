@@ -27,7 +27,8 @@ def has_way_out(x,y,tar):
     else: return True
 
 def brick_configs(old_tar,x,y,configs,num_bricks):
-    configs.add(old_tar.get_sensors())
+    configs.add(old_tar.sense())
+    print x,y,num_bricks
     for (x0,y0) in get_surrounding(x,y):
         if old_tar.board[x0,y0] == EMPTY and num_bricks>0:
             new_tar = copy.deepcopy(old_tar)
@@ -40,7 +41,8 @@ def brick_configs(old_tar,x,y,configs,num_bricks):
 
 
 # initialize empty tartarus
-tar = GeneralizedTartarus.GeneralizedTartarus(SIZE)
+tar = GeneralizedTartarus.GeneralizedTartarus({})
+tar.configs = None
 
 # keep track of all possible configs
 configs = set()
@@ -57,12 +59,15 @@ for x in range(1,SIZE+1):
 print tar
 for x in range(1,SIZE+1):
     for y in range(1,SIZE+1):
-        tar.x = x
-        tar.y = y
-        brick_configs(tar,x,y,configs,NUM_BRICKS)
-        print x,y
-        print configs
-        print len(configs)
+        if (x,y) in ((1,1),(1,2),(1,6),
+                     (2,6),(6,6),(6,5),
+                     (6,1),(5,1),(2,2)):
+            tar.x = x
+            tar.y = y
+            brick_configs(tar,x,y,configs,NUM_BRICKS)
+            print x,y
+            print configs
+            print len(configs)
 
 
 print configs
