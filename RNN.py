@@ -3,28 +3,11 @@
 import numpy as np
 import cPickle
 import copy
-'''
-def sigmoid(x):
-    return (np.tanh(2*(x-0.5))+1)/2
-'''
-'''
-def linear(x):
-    return x
-
-def sigmoid(x):
-    return np.tanh(x)
-'''
-# min and maximum activations (for linear units)
-MAX_A = 100
-MIN_A = -100
-
 
 class RNN:
     
-    def __init__(self, numInput, numOutput, config):
+    def __init__(self, numInput, numOutput):
         
-        self.output_type = config.get('network','output_type')
-
         self.numInput = numInput
         self.numOutput = numOutput
         self.numHidden = 0
@@ -116,6 +99,10 @@ class RNN:
             for v in range(self.numInput+1,self.numInput+1+self.numOutput):
                 self.addConnection(u,v)
 
+    def addSelfLoopsToOutput(self):
+        for o in range(self.numInput+1,self.numInput+1+self.numOutput):
+            self.addConnection(o,o)
+
     def setWeight(self,u,v,w):
         if (u,v) in self.present_connections.union(self.bias_connections):
             self.weights[u,v] = w
@@ -127,15 +114,7 @@ class RNN:
     
     def step(self):
         self.activation = np.dot(self.activation,self.weights)
-        if self.output_type == 'sigmoid':
-            self.activation[:] = np.tanh(self.activation[:])
-        else:
-            self.activation[:self.numInput+self.numOutput+1] = \
-                self.activation[:self.numInput+self.numOutput+1].clip(MIN_A,MAX_A)
-            self.activation[1+self.numInput+self.numOutput:] = \
-                np.tanh(2*self.activation[1+self.numInput+self.numOutput:])
-
-            
+        self.activation[:] = np.tanh(self.activation[:])
 
     def save(self,path):
         cPickle.dump(self,open(path,'wb'),2)

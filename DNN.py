@@ -1,6 +1,6 @@
 # Direct Encoding of Neural Networks Evolutionary Process (see Mouret)
 
-import rnn
+import RNN
 import numpy as np
 import random
 import copy
@@ -13,11 +13,11 @@ MIN_FITNESS = -1000000
 
 class DNN:
 
-    def __init__(self,config):
+    def __init__(self,num_input,num_output,config):
         # load task parameters
         self.config = config
-        self.num_input = config.getint('task','num_input')
-        self.num_output = config.getint('task','num_output')
+        self.num_input = num_input
+        self.num_output = num_output
         
         # load GA parameters
         self.population_size = config.getint('evolution',
@@ -26,8 +26,6 @@ class DNN:
                                 'add_connection_rate')
         self.remove_connection_rate = config.getfloat('evolution',
                                 'remove_connection_rate')
-        self.change_connection_rate = config.getfloat('evolution',
-                                'change_connection_rate')
         self.add_neuron_rate = config.getfloat('evolution',
                                 'add_neuron_rate')
         self.remove_neuron_rate = config.getfloat('evolution',
@@ -65,6 +63,9 @@ class DNN:
         for (u,v) in indiv.present_connections.union(indiv.bias_connections):
             indiv.weights[u,v] = np.random.uniform(-1,1)
         return indiv
+    
+    def get_population_size(self):
+        return self.population_size
 
     def get_indiv(self,i):
         return self.population[i]
@@ -109,9 +110,6 @@ class DNN:
         if np.random.random() < self.remove_connection_rate \
         and len(indiv.present_connections) > 0:
             indiv.removeConnection(*random.choice(tuple(indiv.present_connections)))
-
-        # change connection (not implemented)
-
         # mutate weights (can optimize)
         for (u,v) in indiv.present_connections.union(indiv.bias_connections):
             w = indiv.weights[u,v]+self.mutation_st_dev*np.random.standard_cauchy()

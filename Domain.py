@@ -7,8 +7,12 @@ class Domain:
     def reset(self): raise NotImplementedError
 
     def sense(self): raise NotImplementedError
+    
+    def get_num_sensors(self): raise NotImplementedError
 
     def act(self,a): raise NotImplementedError
+
+    def get_num_actions(self): raise NotImplementedError
 
     def get_fitness(self): raise NotImplementedError
 

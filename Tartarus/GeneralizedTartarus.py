@@ -28,29 +28,14 @@ class GeneralizedTartarus(Domain):
 
     """ Required domain methods """
 
-    def __init__(self,args):
-        # Load args
-        if 'size' in args: self.size = args['size']
-        else: self.size = 6
-        if 'num_bricks' in args: self.num_bricks = args['num_bricks']
-        else: self.num_bricks = self.size
-        if 'num_score_loc' in args: self.num_score_loc = args['num_score_loc']
-        else: self.num_score_loc = (self.size*2)/3
-        if 'num_steps' in args: self.num_steps = args['num_steps']
-        else: self.num_steps = 20*self.num_score_loc
-        if 'num_init_configs' in args: 
-            self.num_init_configs = args[num_init_configs]
-        else: self.num_init_configs = 100
-
-        # init score locations
-        self.score_locations = set()
-        print 'scores'
-        for l in range(self.num_score_loc): 
-            self.score_locations.add(self.random_wall_place())
-
-        # generate configs
+    def __init__(self,config):
+        self.size = config.getint('tartarus','size')
+        self.num_bricks = config.getint('tartarus','num_bricks')
+        self.num_score_loc = config.getint('tartarus','num_score_loc')
+        self.num_steps = config.getint('tartarus','num_steps')
+        self.num_init_configs = config.getint('tartarus','num_init_configs')
+        self.init_score_locations()
         self.gen_init_configs()
-
         self.reset()
 
     def reset(self):
@@ -69,6 +54,8 @@ class GeneralizedTartarus(Domain):
             else: inputs.append(0)
         return tuple(inputs)
 
+    def get_num_sensors(self): return 16
+
     def act(self,a):
         if not self.trial_done():
             self.curr_step+=1
@@ -82,6 +69,8 @@ class GeneralizedTartarus(Domain):
             if not self.done(): 
                 self.next_config()
                 self.act(a)
+
+    def get_num_actions(self): return 3
 
     def get_fitness(self):
         return self.fitness/float(self.num_init_configs)
@@ -117,6 +106,8 @@ class GeneralizedTartarus(Domain):
         return s
 
     """ Other methods """
+    
+    def manhatten((x1,y1),(x2,y2)): return abs(x1-x2)+abs(y1-y2)
 
     def init_empty_board(self):
         for x in range(0,self.size+2):
@@ -138,6 +129,12 @@ class GeneralizedTartarus(Domain):
             bull_loc = self.random_inner_place()
             configs.append((deepcopy(brick_locs),bull_loc))
         self.configs = tuple(configs)
+    
+    def init_score_locations(self):
+        self.score_locations = set()
+        print 'scores'
+        for l in range(self.num_score_loc): 
+            self.score_locations.add(self.random_wall_place())
 
     def next_config(self):
         self.init_empty_board()
@@ -182,29 +179,21 @@ class GeneralizedTartarus(Domain):
         return tuple(sensors)
     
     def get_global_state(self):
-        state = []
-        for x in range(1,self.size+1):
-            for y in range(1,self.size+1):
-                state.append(self.board[x,y])
-        return state
+        return [bricks[b] for b in range(self.num_bricks)]
 
     def update_hand_coded(self):
-        global_state = []
-        for b in range(self.num_bricks):
-            global_state.append(self.bricks[b])
-        self.hand_coded.append(deepcopy(tuple(global_state)))
+        self.hand_coded.append(deepcopy(tuple(self.get_global_state())))
 
     def update_fitness(self):
         fitness = 0
-        for (x,y) in self.board:
-            if self.board[x,y]==BRICK:
-                if (x,y) in self.score_locations:
-                    fitness += 2
-                elif self.on_wall(x,y):
-                    fitness -= 1
+        for b in self.bricks:
+            (x,y) = self.bricks[b]
+            if (x,y) in self.score_locations:
+                fitness += 2
+            elif self.on_wall(x,y):
+                fitness -= 1
         self.fitness += fitness
-
-    
+  
     def forward(self):
         # (x1,y1) space one ahead, (x2,y2) two ahead
         if self.orientation==NORTH:
@@ -226,6 +215,9 @@ class GeneralizedTartarus(Domain):
             self.board[x2,y2] = BRICK
             self.board[x1,y1] = EMPTY
             self.x,self.y = x1,y1
+            for b in self.bricks:
+                if self.bricks[b] == (x1,y1):
+                    self.bricks[b] = (x2,y2)
             
     def left(self):
         self.orientation = (self.orientation - 1) % 4

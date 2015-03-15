@@ -1,6 +1,6 @@
 # Novelty Search implemented on top of DNN EA
 
-import dnn
+import DNN
 from net_viz import visualize
 import time
 import ConfigParser
@@ -11,44 +11,27 @@ import random
 
 class Novelty_Search:
     
-    def __init__(self,config):
+    def __init__(self,num_input,num_output,config):
         
-        self.distance_func = config.get('novelty','distance_func')
-        self.pmin = config.getfloat('novelty','pmin')
         self.padd = config.getfloat('novelty','padd')
         self.k = config.getint('novelty','k')
         self.archive_size = config.getint('novelty','archive_size')
-        self.ea = dnn.DNN(config)
+        self.ea = dnn.DNN(num_input,num_output,config)
         self.archive = []
         self.current_behaviors = [None]*self.ea.population_size
         
-    def dist(self,b1,b2):
-        if len(b1) != len(b2):
-            #raise Exception('Behavior length mismatch.')
-            if len(b1) < len(b2):
-                temp = np.zeros(len(b2))
-                temp[:len(b1)] = b1[:]
-                b1 = temp
-            else:
-                temp = np.zeros(len(b1))
-                temp[:len(b2)] = b2[:]
-                b2 = temp
-            if len(b1) != len(b2):
-                raise Exception('Behavior length mismatch.')
-        if self.distance_func == 'hamming':
-            return np.sum(np.array(b1)-np.array(b2))
-        elif self.distance_func == 'euclidean':
-            return np.linalg.norm(np.array(b1)-np.array(b2))
-        else: raise Exception('Bad distance metric')
+    def score(self,b1,b2): raise NotImplementedError
             
     def novelty(self,b):
         if len(self.archive) > 0:
-            neighbors = sorted([self.dist(b,b0) for b0 in \
+            neighbors = sorted([self.score(b,b0) for b0 in \
                         (self.archive+self.current_behaviors)])[:self.k]
-            #return float(1/self.k)*sum(neighbors)
             return sum(neighbors)
         else: return 10
-        
+    
+    def get_population_size(self):
+        return ea.get_population_size()
+
     def get_indiv(self,i):
         return self.ea.population[i]
 
@@ -61,8 +44,6 @@ class Novelty_Search:
             self.ea.fitness[i] = f
         if random.random() >= self.padd:
             self.archive.append(self.current_behaviors[i])
-        #if f >= self.pmin:
-        #    self.archive.append(self.current_behaviors[i])
         if len(self.archive) > self.archive_size: 
             del self.archive[0]
 
