@@ -1,7 +1,6 @@
 # Novelty Search implemented on top of DNN EA
 
 import DNN
-from net_viz import visualize
 import time
 import ConfigParser
 import sys
@@ -9,14 +8,14 @@ import numpy as np
 import random
 
 
-class Novelty_Search:
+class NoveltySearch:
     
     def __init__(self,num_input,num_output,config):
         
         self.padd = config.getfloat('novelty','padd')
         self.k = config.getint('novelty','k')
         self.archive_size = config.getint('novelty','archive_size')
-        self.ea = dnn.DNN(num_input,num_output,config)
+        self.ea = DNN.DNN(num_input,num_output,config)
         self.archive = []
         self.current_behaviors = [None]*self.ea.population_size
         
@@ -30,7 +29,7 @@ class Novelty_Search:
         else: return 10
     
     def get_population_size(self):
-        return ea.get_population_size()
+        return self.ea.get_population_size()
 
     def get_indiv(self,i):
         return self.ea.population[i]

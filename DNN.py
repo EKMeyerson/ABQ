@@ -7,7 +7,6 @@ import copy
 import sys
 import ConfigParser
 import time
-from net_viz import visualize
 
 MIN_FITNESS = -1000000
 
@@ -58,7 +57,7 @@ class DNN:
         self.best_curr_fitness = MIN_FITNESS
     
     def random_indiv(self):
-        indiv = rnn.RNN(self.num_input,self.num_output,self.config)
+        indiv = RNN.RNN(self.num_input,self.num_output)
         indiv.initializePerceptron()
         for (u,v) in indiv.present_connections.union(indiv.bias_connections):
             indiv.weights[u,v] = np.random.uniform(-1,1)

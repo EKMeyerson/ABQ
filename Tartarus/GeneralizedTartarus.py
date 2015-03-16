@@ -75,7 +75,7 @@ class GeneralizedTartarus(Domain):
     def get_fitness(self):
         return self.fitness/float(self.num_init_configs)
 
-    def get_hand_coded_behavior(self):
+    def getHandCoded(self,b,f):
         return self.hand_coded
 
     def hand_coded_distance(self,b1,b2):
@@ -132,7 +132,6 @@ class GeneralizedTartarus(Domain):
     
     def init_score_locations(self):
         self.score_locations = set()
-        print 'scores'
         for l in range(self.num_score_loc): 
             self.score_locations.add(self.random_wall_place())
 
@@ -163,7 +162,6 @@ class GeneralizedTartarus(Domain):
             y = random.randrange(1,self.size+1)
             if (x,y) not in self.score_locations \
             and self.on_wall(x,y):
-                print x,y
                 return x,y
 
     def get_sensors(self):
@@ -179,7 +177,7 @@ class GeneralizedTartarus(Domain):
         return tuple(sensors)
     
     def get_global_state(self):
-        return [bricks[b] for b in range(self.num_bricks)]
+        return [self.bricks[b] for b in range(self.num_bricks)]
 
     def update_hand_coded(self):
         self.hand_coded.append(deepcopy(tuple(self.get_global_state())))

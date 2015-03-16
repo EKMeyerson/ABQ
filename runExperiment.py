@@ -1,11 +1,14 @@
 """ General script for running experiments """
 
 import sys
+sys.path.append('./Tartarus')
+import numpy as np
 import random
 import cPickle
 import importlib
 import ConfigParser
 import multiprocessing
+
 
 import behaviors
 import distances
@@ -18,26 +21,26 @@ config = ConfigParser.ConfigParser()
 config.read(configfile)
 
 num_gens = config.getint('evolution','num_generations')
-ea_kind = config.getint('evolution','drive')
+ea_kind = config.get('evolution','drive')
 if ea_kind == 'novelty': from NoveltySearch import NoveltySearch as ea
 else: from DNN import DNN as ea
 
 
-task_set = cPickle.load(open(config.get('domain','task_set'),'rb'))
 
 # Load domain
 domain_name = config.get('domain','domain_name')
 Domain = importlib.import_module(domain_name)
-domain_init = getattr(domain,domain_name)
+domain_init = getattr(Domain,domain_name)
 domain = domain_init(config)
 num_input = config.getint('domain','num_input')
 num_output = config.getint('domain','num_output')
 completion_threshold = config.getfloat('domain','completion_threshold')
+task_set = cPickle.load(open(config.get('domain','task_set'),'rb'))
 
 # Load metric
 behavior = config.get('metric','behavior')
 if behavior == 'hand_coded':
-    get_behavior = Domain.getHandCoded
+    get_behavior = domain.getHandCoded
 elif behavior == 'event_counts':
     get_behavior = behaviors.eventCounts
 elif behavior == 'sensory_action_history': 
@@ -52,7 +55,7 @@ elif behavior == 'random':
 distance = config.get('metric','distance')
 if ea_kind == 'novelty':
     if distance == 'hand_coded':
-        ea.score = Domain.hand_coded_distance
+        ea.score = domain.hand_coded_distance
     elif distance == 'euclidean':
         ea.score = distances.euclidean
     elif distance == 'hamming':
@@ -67,9 +70,9 @@ file_prefix = 'results/{}'.format(file_prefix)
 RESULTS_FILE = file_prefix + '.results'
 PROGRESS_FILE = file_prefix + '.progress'
 SAMPLES_FILE = file_prefix + '.samples'
-sampling = conifg.getboolean('output','collect samples')
+sampling = config.getboolean('output','collect_samples')
 success_sample_threshold = config.getfloat('output','success_sample_threshold')
-failure_sample_prob = config.getfloat('output','failure sample prob')
+failure_sample_prob = config.getfloat('output','failure_sample_prob')
 
 # Run experiment
 t = 0
@@ -82,12 +85,13 @@ for task in task_set:
     evolving = True
     while evolving:
         for i in range(ne.get_population_size()):
+            print curr_gen,best_fitness
             task.reset()
             brain = ne.get_indiv(i)
             b = []
             while not task.done():
                 sensors = task.sense()
-                brain.set_input(sensors)
+                brain.setInput(sensors)
                 brain.step()
                 action = np.argmax(brain.readOutput())
                 task.act(action)
@@ -97,9 +101,11 @@ for task in task_set:
             ne.eval_indiv(i,b)
             if f > best_fitness: best_fitness = f
             if sampling:
-                if f >= success_sample_score \
+                if f >= success_sample_threshold \
                 or random.random >= failure_sample_prob:
-                    write_sample(f,brain,b)
+                    #write_sample(f,brain,b)
+                    with open(SAMPLES_FILE,'a') as samples_file:
+                        samples_file.write('{} {}\n'.format(f,b))
         if best_fitness >= completion_threshold: 
             evolving = False
         elif curr_gen >= num_gens:
@@ -109,7 +115,11 @@ for task in task_set:
             ne.next_gen()
             curr_gen += 1
     total_fitness += best_fitness
-    write_result(curr_gen,best_fitness)
-    write_progress(behavior,t,total_fitness/float(t))
+    #write_result(curr_gen,best_fitness)
+    with open(RESULT_FILE,'a') as result_file:
+        result_file.write('{} {}\n'.format(curr_gen,best_fitness))
+    #write_progress(behavior,t,total_fitness/float(t))
+    with open(PROGRESS_FILE,'a') as progress_file:
+        progress_file.write('{} {} {}\n'.format(behavior,t,total_fitness/float(t)))
 print 'Complete.'
 
