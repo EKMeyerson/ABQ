@@ -27,7 +27,7 @@ class NoveltySearch:
                         (self.archive+self.current_behaviors)])[:self.k]
             return sum(neighbors)
         else: return 10
-    
+
     def get_population_size(self):
         return self.ea.get_population_size()
 

@@ -97,7 +97,7 @@ for task in task_set:
                 task.act(action)
                 b.append((sensors,action))
             f = task.get_fitness()
-            b = get_behavior(b,f)
+            b = task.getHandCoded(b,f)
             ne.eval_indiv(i,b)
             if f > best_fitness: best_fitness = f
             if sampling:

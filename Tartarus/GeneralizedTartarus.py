@@ -24,6 +24,14 @@ EAST = 1
 SOUTH = 2
 WEST = 3
 
+def manhatten(bricks1,bricks2):
+    d = 0
+    for b in range(len(bricks1)):
+        d += abs(bricks1[b][0]-bricks2[b][0])
+        d += abs(bricks1[b][1]-bricks2[b][1])
+    return d
+
+
 class GeneralizedTartarus(Domain):
 
     """ Required domain methods """
@@ -39,7 +47,7 @@ class GeneralizedTartarus(Domain):
         self.reset()
 
     def reset(self):
-        self.curr_config = 0
+        self.curr_config = -1
         self.next_config()
         self.orientation = NORTH
         self.fitness = 0
@@ -57,6 +65,7 @@ class GeneralizedTartarus(Domain):
     def get_num_sensors(self): return 16
 
     def act(self,a):
+        #print self.curr_config,self.curr_step,self.get_fitness()
         if not self.trial_done():
             self.curr_step+=1
             if a == FORWARD: self.forward()
@@ -66,6 +75,7 @@ class GeneralizedTartarus(Domain):
         else:    
             self.update_fitness()
             self.update_hand_coded()
+            self.curr_config += 1
             if not self.done(): 
                 self.next_config()
                 self.act(a)
@@ -76,7 +86,7 @@ class GeneralizedTartarus(Domain):
         return self.fitness/float(self.num_init_configs)
 
     def getHandCoded(self,b,f):
-        return self.hand_coded
+        return deepcopy(self.hand_coded)
 
     def hand_coded_distance(self,b1,b2):
         d = 0
@@ -140,7 +150,6 @@ class GeneralizedTartarus(Domain):
         self.bricks = deepcopy(self.configs[self.curr_config][0])
         self.x,self.y = self.configs[self.curr_config][1]
         for b in self.bricks: self.board[self.bricks[b]] = BRICK
-        self.curr_config += 1
         self.curr_step = 0
 
     def random_inner_place(self):
@@ -177,11 +186,11 @@ class GeneralizedTartarus(Domain):
         return tuple(sensors)
     
     def get_global_state(self):
-        return [self.bricks[b] for b in range(self.num_bricks)]
+        return deepcopy([self.bricks[b] for b in range(self.num_bricks)])
 
     def update_hand_coded(self):
         self.hand_coded.append(deepcopy(tuple(self.get_global_state())))
-
+    
     def update_fitness(self):
         fitness = 0
         for b in self.bricks:
