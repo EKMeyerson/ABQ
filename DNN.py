@@ -124,7 +124,7 @@ class DNN:
         # top individuals repopulate with mutants
         new_pop = []
         for i in parents:
-            #new_pop.append(copy.deepcopy(self.population[i]))
+            #new_pop.append(copy.deepcopy(self.population[i].flush()))
             for c in range(self.children_per_parent):
                 new_pop.append(self.mutate(self.population[i]))
         self.population = new_pop

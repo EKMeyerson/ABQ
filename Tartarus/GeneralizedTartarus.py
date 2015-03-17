@@ -199,7 +199,7 @@ class GeneralizedTartarus(Domain):
             if (x,y) in self.score_locations:
                 fitness += 2
             elif self.on_wall(x,y):
-                fitness -= 1
+                fitness += 1
         self.fitness += fitness
   
     def forward(self):
