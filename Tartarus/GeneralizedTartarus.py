@@ -142,8 +142,9 @@ class GeneralizedTartarus(Domain):
     
     def init_score_locations(self):
         self.score_locations = set()
-        for l in range(self.num_score_loc): 
-            self.score_locations.add(self.random_wall_place())
+        #for l in range(self.num_score_loc): 
+        #    self.score_locations.add(self.random_wall_place())
+        self.score_locatiosn = {(1,1),(1,6),(6,1),(6,6)}
 
     def next_config(self):
         self.init_empty_board()
@@ -186,10 +187,10 @@ class GeneralizedTartarus(Domain):
         return tuple(sensors)
     
     def get_global_state(self):
-        return deepcopy([self.bricks[b] for b in range(self.num_bricks)])
+        return [self.bricks[b] for b in range(self.num_bricks)]
 
     def update_hand_coded(self):
-        self.hand_coded.append(deepcopy(tuple(self.get_global_state())))
+        self.hand_coded.append(tuple(self.get_global_state()))
     
     def update_fitness(self):
         fitness = 0

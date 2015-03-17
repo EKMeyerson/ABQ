@@ -6,7 +6,7 @@ import ConfigParser
 import sys
 import numpy as np
 import random
-
+from copy import deepcopy
 
 class NoveltySearch:
     
@@ -35,7 +35,7 @@ class NoveltySearch:
         return self.ea.population[i]
 
     def eval_indiv(self,i,b):
-        self.current_behaviors[i] = b[:]
+        self.current_behaviors[i] = deepcopy(b)
 
     def next_gen(self):
         for i in range(self.ea.population_size):

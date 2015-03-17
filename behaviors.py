@@ -20,7 +20,7 @@ def sensoryActionHistory(f,h,none):
                 b.append(item)
     return b
 
-def actionHistoy(f,h,none):
+def actionHistory(f,h,none):
     b = []
     for event in h:
         for item in event[1]:

@@ -84,8 +84,9 @@ for task in task_set:
     curr_gen = 1
     evolving = True
     while evolving:
+        curr_best_fitness = MIN_FITNESS
         for i in range(ne.get_population_size()):
-            print curr_gen,best_fitness
+            print curr_gen,best_fitness,curr_best_fitness
             task.reset()
             brain = ne.get_indiv(i)
             b = []
@@ -95,11 +96,12 @@ for task in task_set:
                 brain.step()
                 action = np.argmax(brain.readOutput())
                 task.act(action)
-                b.append((sensors,action))
+                b.append((sensors,(action,)))
             f = task.get_fitness()
-            b = task.getHandCoded(b,f)
+            b = get_behavior(f,b,None)
             ne.eval_indiv(i,b)
             if f > best_fitness: best_fitness = f
+            if f > curr_best_fitness: curr_best_fitness = f
             if sampling:
                 if f >= success_sample_threshold \
                 or random.random >= failure_sample_prob:
