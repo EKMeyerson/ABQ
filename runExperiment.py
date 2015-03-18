@@ -60,6 +60,8 @@ if ea_kind == 'novelty':
         ea.score = distances.euclidean
     elif distance == 'hamming':
         ea.score = distances.hamming
+    elif distance == 'manhattan':
+        ea.score = distances.manhattan
 
 if config.get('metric','features') != '':
     features = cPickle.load(open(config.get('metric','features'),'rb'))
@@ -85,7 +87,7 @@ for task in task_set:
     evolving = True
     while evolving:
         curr_best_fitness = MIN_FITNESS
-        for i in range(ne.get_population_size()):
+        for i in range(ne.get_population_size()): # multi process (pool) this
             print curr_gen,best_fitness,curr_best_fitness
             task.reset()
             brain = ne.get_indiv(i)
@@ -96,7 +98,9 @@ for task in task_set:
                 brain.step()
                 action = np.argmax(brain.readOutput())
                 task.act(action)
-                b.append((sensors,(action,)))
+                b.extend(list(sensors))
+                b.append(action)
+                if task.trial_done(): brain.flush()
             f = task.get_fitness()
             b = task.get_fitness()
             ne.eval_indiv(i,b)

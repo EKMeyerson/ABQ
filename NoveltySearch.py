@@ -18,7 +18,11 @@ class NoveltySearch:
         self.ea = DNN.DNN(num_input,num_output,config)
         self.archive = []
         self.current_behaviors = [None]*self.ea.population_size
-        
+    
+    def get_best_fitness(self): return self.ea.get_best_fitness()
+
+    def get_avg_fitness(self): return self.ea.get_avg_fitness()
+
     def score(self,b1,b2): raise NotImplementedError
             
     def novelty(self,b):

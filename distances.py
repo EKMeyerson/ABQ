@@ -1,13 +1,18 @@
 """ Generic distances for behaviors """
 
 import numpy as np
+import scipy.spatial.distance as sp
 
 # b should be a list or np array
 
-def hamming(none,b1,b2):
+def hamming(b1,b2):
     if len(b1) != len(b2): b1,b2 = adjustLengths(b1,b2)
-    return sum(int(b1[i]!=b2[i]) for i in range(len(b1)))
+    return sp.hamming(b1,b2)
 
 def euclidean(b1,b2):
     if len(b1) != len(b2): b1,b2 = adjustLengths(b1,b2)
-    return np.linalg.norm(np.array(b1)-np.array(b2))
+    return sp.euclidean(b1,b2)
+
+def manhatten(b1,b2):
+    if len(b1) != len(b2): b1,b2 = adjustLengths(b1,b2)
+    return sp.cityblock(b1,b2)  

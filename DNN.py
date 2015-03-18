@@ -56,6 +56,10 @@ class DNN:
         self.best_fitness_so_far = MIN_FITNESS
         self.best_curr_fitness = MIN_FITNESS
     
+    def get_best_fitness(self): return self.best_fitness_so_far
+
+    def get_avg_fitness(self): return sum(self.fitness)/float(self.population_size)
+
     def random_indiv(self):
         indiv = RNN.RNN(self.num_input,self.num_output)
         indiv.initializePerceptron()

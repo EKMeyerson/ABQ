@@ -4,9 +4,9 @@ import sys
 sys.path.append('..')
 import random
 from copy import deepcopy
+import numpy as np
 
 from Domain import Domain
-
 
 # cell states
 EMPTY = 0
@@ -24,13 +24,6 @@ EAST = 1
 SOUTH = 2
 WEST = 3
 
-def manhatten(bricks1,bricks2):
-    d = 0
-    for b in range(len(bricks1)):
-        d += abs(bricks1[b][0]-bricks2[b][0])
-        d += abs(bricks1[b][1]-bricks2[b][1])
-    return d
-
 
 class GeneralizedTartarus(Domain):
 
@@ -42,25 +35,35 @@ class GeneralizedTartarus(Domain):
         self.num_score_loc = config.getint('tartarus','num_score_loc')
         self.num_steps = config.getint('tartarus','num_steps')
         self.num_init_configs = config.getint('tartarus','num_init_configs')
+        self.board = np.zeros((self.size+2,self.size+2),dtype='int16')
+        self.bricks = np.zeros((self.num_bricks,2),dtype='int16')
+        self.init_empty_board()
         self.init_score_locations()
         self.gen_init_configs()
+        self.sensors = np.zeros(8)
+        self.inputs = np.zeros(16)
+        self.hand_coded = np.zeros(2*self.num_bricks*self.num_init_configs,
+                                    dtype='int16') 
         self.reset()
 
     def reset(self):
-        self.curr_config = -1
+        self.curr_config = 0
         self.next_config()
         self.orientation = NORTH
         self.fitness = 0
-        self.hand_coded = []
+        self.hand_coded.fill(0)
 
     def sense(self):
-        inputs = []
-        for s in self.get_sensors():
-            if s==WALL: inputs.append(1)
-            else: inputs.append(0)
-            if s==BRICK: inputs.append(1)
-            else: inputs.append(0)
-        return tuple(inputs)
+        self.update_sensors()
+        i = 0
+        for s in self.sensors:
+            if s==WALL: self.inputs[i] = 1
+            else: self.inputs[i] = 0
+            i += 1
+            if s==BRICK: self.inputs[i] = 1
+            else: self.inputs[i] = 0
+            i += 1
+        return self.inputs
 
     def get_num_sensors(self): return 16
 
@@ -117,21 +120,21 @@ class GeneralizedTartarus(Domain):
 
     """ Other methods """
     
-    def manhatten((x1,y1),(x2,y2)): return abs(x1-x2)+abs(y1-y2)
+    def clear_board(self): self.board[:] = self.empty_board
 
     def init_empty_board(self):
+        self.empty_board = np.zeros((self.size+2,self.size+2),dtype='int16')
         for x in range(0,self.size+2):
             for y in range(0,self.size+2):
                 if x in (0,self.size+1) or y in (0,self.size+1):
-                    self.board[x,y] = WALL
+                    self.empty_board[x,y] = WALL
                 else: self.board[x,y] = EMPTY
 
     def gen_init_configs(self):
-        self.board = {}
         configs = []
         for c in range(self.num_init_configs):
-            self.init_empty_board()
-            brick_locs = {}
+            self.clear_board()
+            brick_locs = np.zeros((self.num_bricks,2),dtype='int16')
             for b in range(self.num_bricks):
                 x,y = self.random_inner_place()
                 self.board[x,y] = BRICK
@@ -147,10 +150,11 @@ class GeneralizedTartarus(Domain):
         self.score_locatiosn = {(1,1),(1,6),(6,1),(6,6)}
 
     def next_config(self):
-        self.init_empty_board()
-        self.bricks = deepcopy(self.configs[self.curr_config][0])
+        self.clear_board()
+        self.bricks[:] = self.configs[self.curr_config][0]
+        #self.bricks[:] = self.configs[self.curr_config][0]
         self.x,self.y = self.configs[self.curr_config][1]
-        for b in self.bricks: self.board[self.bricks[b]] = BRICK
+        for b in range(self.num_bricks): self.board[tuple(self.bricks[b])] = BRICK
         self.curr_step = 0
 
     def random_inner_place(self):
@@ -174,28 +178,23 @@ class GeneralizedTartarus(Domain):
             and self.on_wall(x,y):
                 return x,y
 
-    def get_sensors(self):
-        sensors = []
-        sensors.append(self.board[self.x,self.y+1]) # N
-        sensors.append(self.board[self.x+1,self.y+1]) # NE
-        sensors.append(self.board[self.x+1,self.y]) # E
-        sensors.append(self.board[self.x+1,self.y-1]) # SE
-        sensors.append(self.board[self.x,self.y-1]) # S
-        sensors.append(self.board[self.x-1,self.y-1]) # SW
-        sensors.append(self.board[self.x-1,self.y]) # W
-        sensors.append(self.board[self.x-1,self.y+1]) # NW
-        return tuple(sensors)
+    def update_sensors(self):
+        self.sensors[0] = self.board[self.x,self.y+1] # N
+        self.sensors[1] = self.board[self.x+1,self.y+1] # NE
+        self.sensors[2] = self.board[self.x+1,self.y] # E
+        self.sensors[3] = self.board[self.x+1,self.y-1] # SE
+        self.sensors[4] = self.board[self.x,self.y-1] # S
+        self.sensors[5] = self.board[self.x-1,self.y-1] # SW
+        self.sensors[6] = self.board[self.x-1,self.y] # W
+        self.sensors[7] = self.board[self.x-1,self.y+1] # NW
     
-    def get_global_state(self):
-        return [self.bricks[b] for b in range(self.num_bricks)]
-
     def update_hand_coded(self):
-        self.hand_coded.append(tuple(self.get_global_state()))
+        self.hand_coded[2*self.num_bricks*self.curr_config:
+            2*self.num_bricks*(self.curr_config+1)] = self.bricks.flatten()
     
     def update_fitness(self):
         fitness = 0
-        for b in self.bricks:
-            (x,y) = self.bricks[b]
+        for (x,y) in self.bricks:
             if (x,y) in self.score_locations:
                 fitness += 2
             elif self.on_wall(x,y):
@@ -223,9 +222,9 @@ class GeneralizedTartarus(Domain):
             self.board[x2,y2] = BRICK
             self.board[x1,y1] = EMPTY
             self.x,self.y = x1,y1
-            for b in self.bricks:
-                if self.bricks[b] == (x1,y1):
-                    self.bricks[b] = (x2,y2)
+            for b in range(self.num_bricks):
+                if tuple(self.bricks[b]) == (x1,y1):
+                    self.bricks[b] = x2,y2
             
     def left(self):
         self.orientation = (self.orientation - 1) % 4
