@@ -123,6 +123,9 @@ class GeneralizedTartarus(Domain):
                     s += 'X'
                 else: s += ' '
             s += str(y)
+        s += '\n'
+        for x in range(0,self.size+2): s+=str(x)
+        s += '\n'
         return s
 
     """ Other methods """

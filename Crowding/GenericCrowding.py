@@ -84,20 +84,20 @@ class GenericCrowding:
     def evaluate(self,indiv):
         task = self.task
         task.reset()
-        indiv.brain.flush()
-        b = []
+        b = np.zeros(task.num_steps*task.num_init_configs)
+        i = 0
         sensors = task.inputs
         while not task.done():
-            #task.update_inputs()
+            if task.curr_step == 0: indiv.brain.flush()
             indiv.brain.setInput(sensors)
             indiv.brain.step()
             action = np.argmax(indiv.brain.readOutput())
             task.act(action)
             #b.extend(list(sensors))
-            b.append(action)
-            if task.trial_done(): indiv.brain.flush()
+            b[i] = action
+            i += 1
         indiv.fitness = task.get_fitness()
-        indiv.replacementBehavior = np.array(b)
+        indiv.replacementBehavior = b[:]
 
     def crowdingSelect(self,child):
         min_distance = MAX_DISTANCE
