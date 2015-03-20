@@ -45,6 +45,7 @@ class GenericCrowding:
         childAgenome = np.zeros(parentAgenome.size)
         childBgenome = np.zeros(parentBgenome.size)
         point = np.random.randint(parentAgenome.size)
+        print 'Point: {}'.format(point)
         childAgenome[:point] = parentAgenome[:point]
         childAgenome[point:] = parentBgenome[point:]
         childBgenome[:point] = parentBgenome[:point]
@@ -76,11 +77,14 @@ class GenericCrowding:
     def tournamentSelect(self):
         max_score = MIN_SCORE
         for i in range(self.tournamentSize):
-            j = self.population[np.random.randint(self.populationSize)]
-            score = j.fitness
+            j = np.random.randint(self.populationSize)
+            indiv = self.population[j]
+            score = indiv.fitness
             if score > max_score:
                 max_score = score
-                winner = j
+                winner = indiv
+                index = j
+        print 'indiv: {}'.format(index)
         return winner
 
     def crowdingSelect(self,child):
