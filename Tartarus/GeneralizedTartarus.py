@@ -45,7 +45,7 @@ class GeneralizedTartarus(Domain):
         self.configs = np.zeros((self.num_init_configs,self.num_bricks+1,2),
                                     dtype='int16')
         self.gen_init_configs()
-        self.sensors = np.zeros(8)
+        #self.sensors = np.zeros(8)
         #self.inputs = np.zeros(16)
         self.inputs = np.zeros(24)
         self.hand_coded = np.zeros(2*self.num_bricks*self.num_init_configs,
@@ -63,11 +63,14 @@ class GeneralizedTartarus(Domain):
         return self.inputs
 
     def update_inputs(self):
-        self.update_sensors()
+        #self.update_sensors()
         i = 0
-        for s in self.sensors:
-            if s==EMPTY: self.inputs[i:i+3] = (1,0,0)
-            elif s==WALL: self.inputs[i:i+3] = (0,1,0)
+        for s in [(self.x,self.y+1),(self.x+1,self.y+1),
+                    (self.x+1,self.y),(self.x+1,self.y-1),
+                    (self.x,self.y-1),(self.x-1,self.y-1),
+                    (self.x-1,self.y),(self.x-1,self.y+1)]:
+            if self.board[s]==EMPTY: self.inputs[i:i+3] = (1,0,0)
+            elif self.board[s]==WALL: self.inputs[i:i+3] = (0,1,0)
             else: self.inputs[i:i+3] = (0,0,1)
             i += 3
 
@@ -208,16 +211,6 @@ class GeneralizedTartarus(Domain):
             if (x,y) not in self.score_locations \
             and self.on_wall(x,y):
                 return x,y
-
-    def update_sensors(self):
-        self.sensors[0] = self.board[self.x,self.y+1] # N
-        self.sensors[1] = self.board[self.x+1,self.y+1] # NE
-        self.sensors[2] = self.board[self.x+1,self.y] # E
-        self.sensors[3] = self.board[self.x+1,self.y-1] # SE
-        self.sensors[4] = self.board[self.x,self.y-1] # S
-        self.sensors[5] = self.board[self.x-1,self.y-1] # SW
-        self.sensors[6] = self.board[self.x-1,self.y] # W
-        self.sensors[7] = self.board[self.x-1,self.y+1] # NW
     
     def update_hand_coded(self):
         self.hand_coded[2*self.num_bricks*self.curr_config:
