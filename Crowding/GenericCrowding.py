@@ -77,7 +77,7 @@ class GenericCrowding:
 
     def mutate(self,child):
         for u in range(child.brain.numNodes):
-            for v in range(child.brain.numNodes):
+            for v in range(child.brain.numUnits):
                 if np.random.random() < self.mutationRate:
                     child.brain.weights[u,v] = np.random.uniform(-10,10)
 

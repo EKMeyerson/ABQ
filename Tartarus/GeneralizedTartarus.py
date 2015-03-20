@@ -42,9 +42,12 @@ class GeneralizedTartarus(Domain):
         self.init_score_locations()
         self.bricks = np.zeros((self.num_bricks,2),dtype='int16')
         self.orientation = NORTH
+        self.configs = np.zeros((self.num_init_configs,self.num_bricks+1,2),
+                                    dtype='int16')
         self.gen_init_configs()
         self.sensors = np.zeros(8)
-        self.inputs = np.zeros(16)
+        #self.inputs = np.zeros(16)
+        self.inputs = np.zeros(24)
         self.hand_coded = np.zeros(2*self.num_bricks*self.num_init_configs,
                                     dtype='int16') 
         self.reset()
@@ -63,12 +66,10 @@ class GeneralizedTartarus(Domain):
         self.update_sensors()
         i = 0
         for s in self.sensors:
-            if s==WALL: self.inputs[i] = 1
-            else: self.inputs[i] = 0
-            i += 1
-            if s>=MIN_BRICK: self.inputs[i] = 1
-            else: self.inputs[i] = 0
-            i += 1
+            if s==EMPTY: self.inputs[i:i+3] = (1,0,0)
+            elif s==WALL: self.inputs[i:i+3] = (0,1,0)
+            else: self.inputs[i:i+3] = (0,0,1)
+            i += 3
 
     def get_num_sensors(self): return 16
 
@@ -133,8 +134,8 @@ class GeneralizedTartarus(Domain):
                 else: self.board[x,y] = EMPTY
 
     def gen_init_configs(self):
-        configs = []
-        while len(configs) < self.num_init_configs:
+        genned_configs = 0
+        while genned_configs < self.num_init_configs:
             self.clear_board()
             for b in range(self.num_bricks):
                 x,y = self.random_inner_place()
@@ -143,8 +144,9 @@ class GeneralizedTartarus(Domain):
                 self.bricks[b,1] = y
             self.x,self.y = self.random_inner_place()
             if self.valid_board():
-                configs.append((deepcopy(self.bricks),(self.x,self.y)))
-        self.configs = tuple(configs)
+                self.configs[genned_configs,:self.num_bricks] = self.bricks
+                self.configs[genned_configs,self.num_bricks:] = (self.x,self.y)
+                genned_configs += 1
     
     def valid_board(self):
         """
@@ -178,12 +180,11 @@ class GeneralizedTartarus(Domain):
 
     def next_config(self):
         self.clear_board()
-        self.bricks[:] = self.configs[self.curr_config][0]
-        self.x,self.y = self.configs[self.curr_config][1]
+        self.bricks[:] = self.configs[self.curr_config,:self.num_bricks]
+        self.x = self.configs[self.curr_config,-1,0]
+        self.y = self.configs[self.curr_config,-1,1]
         for b in range(self.num_bricks): 
-            x = self.bricks[b,0]
-            y = self.bricks[b,1]
-            self.board[x,y] = b + MIN_BRICK
+            self.board[self.bricks[b,0],self.bricks[b,1]] = b + MIN_BRICK
         self.curr_step = 0
         self.update_inputs()
 
@@ -257,8 +258,8 @@ class GeneralizedTartarus(Domain):
             self.board[x2,y2] = self.board[x1,y1]
             self.board[x1,y1] = EMPTY
             self.x,self.y = x1,y1
-            self.bricks[self.board[x2,y2]-MIN_BRICK][0] = x2
-            self.bricks[self.board[x2,y2]-MIN_BRICK][1] = y2
+            self.bricks[self.board[x2,y2]-MIN_BRICK,0] = x2
+            self.bricks[self.board[x2,y2]-MIN_BRICK,1] = y2
             self.update_inputs()
             
     def left(self):
