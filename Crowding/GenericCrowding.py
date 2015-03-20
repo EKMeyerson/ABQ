@@ -57,7 +57,6 @@ class GenericCrowding:
                 max_score = score
                 winner = indiv
                 index = j
-        print 'winner: {}'.format(index)
         return winner
 
     def crossover(self,parentA,parentB):
@@ -87,8 +86,9 @@ class GenericCrowding:
         task.reset()
         indiv.brain.flush()
         b = []
+        sensors = task.inputs
         while not task.done():
-            sensors = task.sense()
+            #task.update_inputs()
             indiv.brain.setInput(sensors)
             indiv.brain.step()
             action = np.argmax(indiv.brain.readOutput())
@@ -98,8 +98,6 @@ class GenericCrowding:
             if task.trial_done(): indiv.brain.flush()
         indiv.fitness = task.get_fitness()
         indiv.replacementBehavior = np.array(b)
-        print indiv.fitness
-        print indiv.replacementBehavior
 
     def crowdingSelect(self,child):
         min_distance = MAX_DISTANCE
@@ -110,8 +108,6 @@ class GenericCrowding:
             if distance < min_distance:
                 min_distance = distance
                 loser = j
-        print 'loser: {}'.format(loser)
-        print 'distance: {}'.format(min_distance)
         return loser
 
     def replace(self,loser,child):

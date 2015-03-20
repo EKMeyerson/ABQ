@@ -55,6 +55,9 @@ class GeneralizedTartarus(Domain):
         self.hand_coded.fill(0)
 
     def sense(self):
+        return self.inputs
+
+    def update_inputs(self):
         self.update_sensors()
         i = 0
         for s in self.sensors:
@@ -64,25 +67,23 @@ class GeneralizedTartarus(Domain):
             if s==BRICK: self.inputs[i] = 1
             else: self.inputs[i] = 0
             i += 1
-        return self.inputs
 
     def get_num_sensors(self): return 16
 
     def act(self,a):
-        #print self.curr_config,self.curr_step,self.get_fitness()
-        if not self.trial_done():
-            self.curr_step+=1
-            if a == FORWARD: self.forward()
-            elif a == LEFT: self.left()
-            elif a == RIGHT: self.right()
-            else: raise Exception ('Bad Action Specified')
-        else:    
+        # BAD ORG
+        self.curr_step+=1
+        if a == FORWARD: self.forward()
+        elif a == LEFT: self.left()
+        elif a == RIGHT: self.right()
+        else: raise Exception ('Bad Action Specified')
+
+        if self.trial_done():
             self.update_fitness()
-            self.update_hand_coded()
+            #self.update_hand_coded()
             self.curr_config += 1
             if not self.done(): 
                 self.next_config()
-                self.act(a)
 
     def get_num_actions(self): return 3
 
@@ -155,10 +156,10 @@ class GeneralizedTartarus(Domain):
     def next_config(self):
         self.clear_board()
         self.bricks[:] = self.configs[self.curr_config][0]
-        #self.bricks[:] = self.configs[self.curr_config][0]
         self.x,self.y = self.configs[self.curr_config][1]
         for b in range(self.num_bricks): self.board[tuple(self.bricks[b])] = BRICK
         self.curr_step = 0
+        self.update_inputs()
 
     def random_inner_place(self):
         while(True):
@@ -221,6 +222,7 @@ class GeneralizedTartarus(Domain):
         
         if self.board[x1,y1]==EMPTY:
             self.x,self.y = x1,y1
+            self.update_inputs()
         elif self.board[x1,y1]==BRICK and self.board[x2,y2]==EMPTY:
             self.board[x2,y2] = BRICK
             self.board[x1,y1] = EMPTY
@@ -228,6 +230,7 @@ class GeneralizedTartarus(Domain):
             for b in range(self.num_bricks):
                 if tuple(self.bricks[b]) == (x1,y1):
                     self.bricks[b] = x2,y2
+            self.update_inputs()
             
     def left(self):
         self.orientation = (self.orientation - 1) % 4
@@ -238,13 +241,14 @@ class GeneralizedTartarus(Domain):
     def trial_done(self): return self.curr_step == self.num_steps
 
 if __name__=='__main__':
-    tartarus = GeneralizedTartarus(6)
+    import ConfigParser
+    config = ConfigParser.ConfigParser()
+    config.read(sys.argv[1])
+    tartarus = GeneralizedTartarus(config)
     actions = [FORWARD,LEFT,LEFT,LEFT,FORWARD,FORWARD,RIGHT,FORWARD]
     while(not tartarus.done()):
         print tartarus
-        print tartarus.x,tartarus.y
         tartarus.act(random.randrange(0,3))
-        print tartarus.done()
     print tartarus
     print tartarus.get_fitness()
 
