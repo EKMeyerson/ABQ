@@ -147,7 +147,10 @@ class GeneralizedTartarus(Domain):
         self.score_locations = set()
         #for l in range(self.num_score_loc): 
         #    self.score_locations.add(self.random_wall_place())
-        self.score_locatiosn = {(1,1),(1,6),(6,1),(6,6)}
+        self.score_locations = {(1,1),(1,6),(6,1),(6,6)}
+
+    def set_default_score_locations(self):
+        self.score_locations = {(1,1),(1,6),(6,1),(6,6)}
 
     def next_config(self):
         self.clear_board()
