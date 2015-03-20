@@ -33,11 +33,32 @@ class GenericCrowding:
     def done(self):
         return self.curr_iteration == self.num_iterations
 
-    def mutate(self,child):
-        for u in range(child.brain.numNodes):
-            for v in range(child.brain.numNodes):
-                if np.random.random() < self.mutationRate:
-                    child.brain.weights[u,v] = np.random.uniform(-10,10)
+    def step(self):
+        parentA = self.tournamentSelect()
+        parentB = self.tournamentSelect()
+        childA,childB = self.crossover(parentA,parentB)
+        self.mutate(childA)
+        self.evaluate(childA)
+        self.mutate(childB)
+        self.evaluate(childB)
+        loserA = self.crowdingSelect(childA)
+        loserB = self.crowdingSelect(childB)
+        self.replace(loserA,childA)
+        self.replace(loserB,childB)
+        self.curr_iteration += 1
+
+    def tournamentSelect(self):
+        max_score = MIN_SCORE
+        for i in range(self.tournamentSize):
+            j = np.random.randint(self.populationSize)
+            indiv = self.population[j]
+            score = indiv.fitness
+            if score > max_score:
+                max_score = score
+                winner = indiv
+                index = j
+        print 'winner: {}'.format(index)
+        return winner
 
     def crossover(self,parentA,parentB):
         parentAgenome = parentA.brain.weights.flatten()
@@ -45,7 +66,6 @@ class GenericCrowding:
         childAgenome = np.zeros(parentAgenome.size)
         childBgenome = np.zeros(parentBgenome.size)
         point = np.random.randint(parentAgenome.size)
-        print 'Point: {}'.format(point)
         childAgenome[:point] = parentAgenome[:point]
         childAgenome[point:] = parentBgenome[point:]
         childBgenome[:point] = parentBgenome[:point]
@@ -55,7 +75,13 @@ class GenericCrowding:
         childA.brain.weights = childAgenome.reshape(childA.brain.weights.shape)
         childB.brain.weights = childBgenome.reshape(childB.brain.weights.shape)
         return childA,childB
-       
+
+    def mutate(self,child):
+        for u in range(child.brain.numNodes):
+            for v in range(child.brain.numNodes):
+                if np.random.random() < self.mutationRate:
+                    child.brain.weights[u,v] = np.random.uniform(-10,10)
+
     def evaluate(self,indiv):
         task = self.task
         task.reset()
@@ -73,19 +99,7 @@ class GenericCrowding:
         indiv.fitness = task.get_fitness()
         indiv.replacementBehavior = np.array(b)
         print indiv.fitness
-
-    def tournamentSelect(self):
-        max_score = MIN_SCORE
-        for i in range(self.tournamentSize):
-            j = np.random.randint(self.populationSize)
-            indiv = self.population[j]
-            score = indiv.fitness
-            if score > max_score:
-                max_score = score
-                winner = indiv
-                index = j
-        print 'indiv: {}'.format(index)
-        return winner
+        print indiv.replacementBehavior
 
     def crowdingSelect(self,child):
         min_distance = MAX_DISTANCE
@@ -96,21 +110,9 @@ class GenericCrowding:
             if distance < min_distance:
                 min_distance = distance
                 loser = j
+        print 'loser: {}'.format(loser)
+        print 'distance: {}'.format(min_distance)
         return loser
-
-    def step(self):
-        parentA = self.tournamentSelect()
-        parentB = self.tournamentSelect()
-        childA,childB = self.crossover(parentA,parentB)
-        self.mutate(childA)
-        self.evaluate(childA)
-        self.mutate(childB)
-        self.evaluate(childB)
-        loserA = self.crowdingSelect(childA)
-        loserB = self.crowdingSelect(childB)
-        self.replace(loserA,childA)
-        self.replace(loserB,childB)
-        self.curr_iteration += 1
 
     def replace(self,loser,child):
         self.total_fitness -= self.population[loser].fitness

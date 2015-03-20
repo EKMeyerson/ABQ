@@ -36,6 +36,7 @@ class GeneralizedTartarus(Domain):
         self.num_steps = config.getint('tartarus','num_steps')
         self.num_init_configs = config.getint('tartarus','num_init_configs')
         self.board = np.zeros((self.size+2,self.size+2),dtype='int16')
+        self.empty_board = np.zeros((self.size+2,self.size+2),dtype='int16')
         self.bricks = np.zeros((self.num_bricks,2),dtype='int16')
         self.init_empty_board()
         self.init_score_locations()
@@ -123,7 +124,6 @@ class GeneralizedTartarus(Domain):
     def clear_board(self): self.board[:] = self.empty_board
 
     def init_empty_board(self):
-        self.empty_board = np.zeros((self.size+2,self.size+2),dtype='int16')
         for x in range(0,self.size+2):
             for y in range(0,self.size+2):
                 if x in (0,self.size+1) or y in (0,self.size+1):
