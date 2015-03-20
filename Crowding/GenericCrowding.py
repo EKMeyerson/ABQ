@@ -36,7 +36,7 @@ class GenericCrowding:
     def mutate(self,child):
         for u in range(child.brain.numNodes):
             for v in range(child.brain.numNodes):
-                if np.random < self.mutationRate:
+                if np.random.random() < self.mutationRate:
                     child.brain.weights[u,v] = np.random.uniform(-10,10)
 
     def crossover(self,parentA,parentB):
