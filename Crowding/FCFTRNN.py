@@ -35,7 +35,7 @@ class FCFTRNN:
 
     def step(self):
         self.activation[:] = np.dot(self.activation,self.weights)
-        self.activation[:] = np.tanh(self.activation)
+        self.activation[self.inputEnd:] = np.tanh(self.activation[self.inputEnd:])
 
     def save(self):
         cPickle.dump(self,open(path,'wb'),2)

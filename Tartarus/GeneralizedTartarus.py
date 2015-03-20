@@ -11,7 +11,7 @@ from Domain import Domain
 # cell states
 EMPTY = 0
 WALL = 1
-BRICK = 2
+MIN_BRICK = 2 # brick values are all greater than or equal to 2
 
 # actions
 FORWARD = 0
@@ -40,6 +40,8 @@ class GeneralizedTartarus(Domain):
         self.bricks = np.zeros((self.num_bricks,2),dtype='int16')
         self.init_empty_board()
         self.init_score_locations()
+        self.bricks = np.zeros((self.num_bricks,2),dtype='int16')
+        self.orientation = NORTH
         self.gen_init_configs()
         self.sensors = np.zeros(8)
         self.inputs = np.zeros(16)
@@ -51,7 +53,7 @@ class GeneralizedTartarus(Domain):
         self.curr_config = 0
         self.next_config()
         self.orientation = NORTH
-        self.fitness = 0
+        self.total_fitness = 0
         self.hand_coded.fill(0)
 
     def sense(self):
@@ -64,7 +66,7 @@ class GeneralizedTartarus(Domain):
             if s==WALL: self.inputs[i] = 1
             else: self.inputs[i] = 0
             i += 1
-            if s==BRICK: self.inputs[i] = 1
+            if s>=MIN_BRICK: self.inputs[i] = 1
             else: self.inputs[i] = 0
             i += 1
 
@@ -88,7 +90,7 @@ class GeneralizedTartarus(Domain):
     def get_num_actions(self): return 3
 
     def get_fitness(self):
-        return self.fitness/float(self.num_init_configs)
+        return self.total_fitness
 
     def getHandCoded(self,b,f):
         return deepcopy(self.hand_coded)
@@ -107,7 +109,7 @@ class GeneralizedTartarus(Domain):
             s += '\n'
             for x in range(0,self.size+2):
                 if self.board[x,y] == WALL: s += '|'
-                elif self.board[x,y] == BRICK: s += 'O'
+                elif self.board[x,y] >= MIN_BRICK: s += str(self.board[x,y])
                 elif (self.x,self.y) == (x,y):
                     if self.orientation == NORTH: s += '^'
                     elif self.orientation == EAST: s += '>'
@@ -115,7 +117,6 @@ class GeneralizedTartarus(Domain):
                     else: s += '<'
                 elif (x,y) in self.score_locations: 
                     s += 'X'
-                    print x,y
                 else: s += ' '
             s += str(y)
         return s
@@ -133,19 +134,41 @@ class GeneralizedTartarus(Domain):
 
     def gen_init_configs(self):
         configs = []
-        for c in range(self.num_init_configs):
+        while len(configs) < self.num_init_configs:
             self.clear_board()
-            brick_locs = np.zeros((self.num_bricks,2),dtype='int16')
             for b in range(self.num_bricks):
                 x,y = self.random_inner_place()
-                self.board[x,y] = BRICK
-                brick_locs[b] = x,y
-            bull_loc = self.random_inner_place()
-            configs.append((deepcopy(brick_locs),bull_loc))
+                self.board[x,y] = b+MIN_BRICK
+                self.bricks[b,0] = x
+                self.bricks[b,1] = y
+            self.x,self.y = self.random_inner_place()
+            if self.valid_board():
+                configs.append((deepcopy(self.bricks),(self.x,self.y)))
         self.configs = tuple(configs)
     
+    def valid_board(self):
+        """
+        for (x,y) in self.bricks:
+            if ((x+1,y) in self.bricks) \
+            and ((x,y+1) in self.bricks) \
+            and ((x+1,y+1) in self.bricks):
+                print x,y
+                print self.bricks
+                return False
+        return True
+        """
+        for x in range(1,self.size+1):
+            for y in range(1,self.size+1):
+                if self.board[x,y] >= MIN_BRICK \
+                and self.board[x+1,y] >= MIN_BRICK \
+                and self.board[x,y+1] >= MIN_BRICK \
+                and self.board[x+1,y+1] >= MIN_BRICK:
+                    print self
+                    return False
+        return True
+
     def init_score_locations(self):
-        self.score_locations = set()
+        #self.score_locations = set()
         #for l in range(self.num_score_loc): 
         #    self.score_locations.add(self.random_wall_place())
         self.score_locations = {(1,1),(1,6),(6,1),(6,6)}
@@ -157,7 +180,10 @@ class GeneralizedTartarus(Domain):
         self.clear_board()
         self.bricks[:] = self.configs[self.curr_config][0]
         self.x,self.y = self.configs[self.curr_config][1]
-        for b in range(self.num_bricks): self.board[tuple(self.bricks[b])] = BRICK
+        for b in range(self.num_bricks): 
+            x = self.bricks[b,0]
+            y = self.bricks[b,1]
+            self.board[x,y] = b + MIN_BRICK
         self.curr_step = 0
         self.update_inputs()
 
@@ -170,7 +196,7 @@ class GeneralizedTartarus(Domain):
                 return x,y
 
     def on_wall(self,x,y):
-        if x in (1,self.size) or y in (1,self.size): return True
+        if (x in (1,self.size)) or (y in (1,self.size)): return True
         else: return False
 
     def random_wall_place(self):
@@ -198,12 +224,16 @@ class GeneralizedTartarus(Domain):
     
     def update_fitness(self):
         fitness = 0
+        """
         for (x,y) in self.bricks:
+        """
+        for b in range(self.num_bricks):
+            x,y = self.bricks[b,0],self.bricks[b,1]
             if (x,y) in self.score_locations:
                 fitness += 2
             elif self.on_wall(x,y):
                 fitness += 1
-        self.fitness += fitness
+        self.total_fitness += fitness
   
     def forward(self):
         # (x1,y1) space one ahead, (x2,y2) two ahead
@@ -223,13 +253,12 @@ class GeneralizedTartarus(Domain):
         if self.board[x1,y1]==EMPTY:
             self.x,self.y = x1,y1
             self.update_inputs()
-        elif self.board[x1,y1]==BRICK and self.board[x2,y2]==EMPTY:
-            self.board[x2,y2] = BRICK
+        elif self.board[x1,y1] >= MIN_BRICK and self.board[x2,y2]==EMPTY:
+            self.board[x2,y2] = self.board[x1,y1]
             self.board[x1,y1] = EMPTY
             self.x,self.y = x1,y1
-            for b in range(self.num_bricks):
-                if tuple(self.bricks[b]) == (x1,y1):
-                    self.bricks[b] = x2,y2
+            self.bricks[self.board[x2,y2]-MIN_BRICK][0] = x2
+            self.bricks[self.board[x2,y2]-MIN_BRICK][1] = y2
             self.update_inputs()
             
     def left(self):
@@ -246,10 +275,11 @@ if __name__=='__main__':
     config.read(sys.argv[1])
     tartarus = GeneralizedTartarus(config)
     actions = [FORWARD,LEFT,LEFT,LEFT,FORWARD,FORWARD,RIGHT,FORWARD]
+    print 'Begin'
     while(not tartarus.done()):
         print tartarus
-        tartarus.act(random.randrange(0,3))
-    print tartarus
+        print tartarus.total_fitness
+        tartarus.act(int(raw_input())%3)
     print tartarus.get_fitness()
 
 
