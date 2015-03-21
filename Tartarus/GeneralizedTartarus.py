@@ -36,9 +36,8 @@ class GeneralizedTartarus(Domain):
         self.num_steps = config.getint('tartarus','num_steps')
         self.num_init_configs = config.getint('tartarus','num_init_configs')
         self.board = np.zeros((self.size+2,self.size+2),dtype='int16')
-        self.empty_board = np.zeros((self.size+2,self.size+2),dtype='int16')
         self.bricks = np.zeros((self.num_bricks,2),dtype='int16')
-        self.init_empty_board()
+        self.init_walls()
         self.init_score_locations()
         self.bricks = np.zeros((self.num_bricks,2),dtype='int16')
         self.orientation = NORTH
@@ -130,14 +129,13 @@ class GeneralizedTartarus(Domain):
 
     """ Other methods """
     
-    def clear_board(self): self.board[:] = self.empty_board
+    def clear_board(self): self.board[1:self.size+1,1:self.size+1].fill(EMPTY)
 
-    def init_empty_board(self):
+    def init_walls(self):
         for x in range(0,self.size+2):
             for y in range(0,self.size+2):
                 if x in (0,self.size+1) or y in (0,self.size+1):
-                    self.empty_board[x,y] = WALL
-                else: self.board[x,y] = EMPTY
+                    self.board[x,y] = WALL
 
     def gen_init_configs(self):
         genned_configs = 0
